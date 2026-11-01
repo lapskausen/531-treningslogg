@@ -545,7 +545,9 @@
       }
       if (saved.logs && typeof saved.logs === "object" && !Array.isArray(saved.logs)) next.logs = saved.logs;
       if (saved.estimator && typeof saved.estimator === "object") {
-        if (Object.hasOwn(LIFTS, saved.estimator.lift)) next.estimator.lift = saved.estimator.lift;
+        if (Object.prototype.hasOwnProperty.call(LIFTS, saved.estimator.lift)) {
+          next.estimator.lift = saved.estimator.lift;
+        }
         for (const field of ["weight", "reps"]) {
           const value = saved.estimator[field];
           if (value === "" || (Number.isFinite(Number(value)) && Number(value) >= 0)) {
