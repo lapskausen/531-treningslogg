@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#17251f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="531 Trening">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <title>5/3/1 – Treningslogg</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17251f;
+      --muted: #66746d;
+      --paper: #f5f4ee;
+      --card: #fffefa;
+      --line: #e6e7dc;
+      --green: #245c43;
+      --green-dark: #193d2d;
+      --lime: #d3ec85;
+      --orange: #e88455;
+      --shadow: 0 12px 32px rgb(23 37 31 / 7%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 90% 0%, rgb(211 236 133 / 18%), transparent 31rem),
+        var(--paper);
+      color: var(--ink);
+    }
+    button, input, textarea { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    .shell {
+      width: min(100% - 32px, 760px);
+      margin: 0 auto;
+      padding: max(22px, env(safe-area-inset-top)) 0 max(36px, env(safe-area-inset-bottom));
+    }
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: .73rem;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand-mark {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border-radius: 9px;
+      background: var(--green);
+      color: var(--lime);
+      font-size: .7rem;
+      letter-spacing: -.04em;
+    }
+    .saved-state {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: .02em;
+      text-transform: none;
+      font-weight: 600;
+    }
+    .saved-dot { width: 7px; height: 7px; border-radius: 50%; background: #68a878; }
+    h1 {
+      margin: 21px 0 4px;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      line-height: .98;
+      letter-spacing: -.065em;
+    }
+    .subtitle { margin: 10px 0 22px; color: var(--muted); font-size: .95rem; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 21px;
+      border-radius: 22px;
+      background: var(--ink);
+      color: white;
+      box-shadow: var(--shadow);
+    }
+    .hero::after {
+      position: absolute;
+      right: -28px;
+      bottom: -82px;
+      width: 190px;
+      height: 190px;
+      border: 1px solid rgb(211 236 133 / 20%);
+      border-radius: 50%;
+      box-shadow: 0 0 0 22px rgb(211 236 133 / 4%), 0 0 0 46px rgb(211 236 133 / 4%);
+      content: "";
+      pointer-events: none;
+    }
+    .hero-label, .eyebrow {
+      color: #b6c1b9;
+      font-size: .71rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .hero-row { display: flex; justify-content: space-between; align-items: end; gap: 14px; }
+    .hero h2 { margin: 7px 0 0; font-size: 1.55rem; letter-spacing: -.04em; }
+    .hero-meta { margin: 7px 0 0; color: #c1ccc4; font-size: .87rem; }
+    .progress-copy { flex: 0 0 auto; color: var(--lime); font-size: .85rem; font-weight: 750; }
+    .progress-track { height: 6px; margin-top: 20px; overflow: hidden; border-radius: 9px; background: #34443b; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--lime); transition: width .2s ease; }
+    .section-label {
+      margin: 27px 2px 11px;
+      color: var(--muted);
+      font-size: .71rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .week-tabs, .day-tabs { display: grid; gap: 8px; }
+    .week-tabs { grid-template-columns: repeat(3, 1fr); }
+    .day-tabs { grid-template-columns: repeat(3, 1fr); }
+    .tab {
+      min-height: 47px;
+      padding: 9px 7px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: rgb(255 254 250 / 75%);
+      color: var(--muted);
+      font-size: .84rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .tab[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: white; }
+    .day-tabs .tab { min-height: 57px; text-align: left; padding-left: 12px; }
+    .day-name { display: block; font-size: .83rem; }
+    .day-lifts { display: block; margin-top: 3px; color: currentColor; opacity: .73; font-size: .68rem; font-weight: 550; }
+    .lift-card, .assistance, .settings {
+      margin-top: 13px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--card);
+      box-shadow: 0 5px 18px rgb(23 37 31 / 3%);
+    }
+    .lift-card { padding: 16px; }
+    .lift-heading { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+    .lift-title { margin: 0; font-size: 1.15rem; letter-spacing: -.035em; }
+    .lift-subtitle { margin: 4px 0 0; color: var(--muted); font-size: .77rem; }
+    .tm-chip {
+      flex: 0 0 auto;
+      padding: 7px 9px;
+      border-radius: 10px;
+      background: #eff3e8;
+      color: var(--green-dark);
+      font-size: .72rem;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .set-heading {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      margin: 17px 4px 6px;
+      color: #89938c;
+      font-size: .63rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .set-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 41px;
+      padding: 6px 6px 6px 2px;
+      border-bottom: 1px solid #f0f0e9;
+    }
+    .set-row:last-of-type { border-bottom: 0; }
+    .set-label { display: flex; align-items: center; gap: 9px; font-size: .84rem; font-weight: 650; }
+    .check-wrap { display: inline-flex; align-items: center; justify-content: center; width: 27px; height: 27px; }
+    input[type="checkbox"] {
+      width: 19px;
+      height: 19px;
+      margin: 0;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+    .set-weight { min-width: 64px; text-align: right; font-size: .88rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .set-reps { min-width: 35px; color: var(--muted); text-align: right; font-size: .79rem; }
+    .set-row.is-done .set-label, .set-row.is-done .set-weight { color: #829087; text-decoration: line-through; }
+    .set-row.is-done .set-weight { text-decoration-color: #829087; }
+    .plus-row { background: #f5f7ef; }
+    .plus-row .set-label { color: var(--green-dark); }
+    .amrap-entry {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 9px 0 0 35px;
+      color: var(--muted);
+      font-size: .74rem;
+    }
+    .small-input {
+      width: 66px;
+      min-height: 37px;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: white;
+      color: var(--ink);
+      text-align: center;
+    }
+    .five-by-five {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 12px 10px;
+      border-radius: 12px;
+      background: #f2f5eb;
+    }
+    .five-by-five-info { min-width: 0; }
+    .five-by-five-title { display: block; font-size: .82rem; font-weight: 800; }
+    .five-by-five-weight { display: block; margin-top: 3px; color: var(--muted); font-size: .72rem; }
+    .set-dots { display: flex; gap: 5px; }
+    .set-dot {
+      width: 27px;
+      height: 31px;
+      padding: 0;
+      border: 1px solid #d9e0cf;
+      border-radius: 8px;
+      background: white;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .set-dot[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: white; }
+    .assist-head { padding: 15px 16px; }
+    .assist-head h2, .settings summary { margin: 0; font-size: 1rem; font-weight: 800; }
+    .assist-head p { margin: 4px 0 0; color: var(--muted); font-size: .76rem; line-height: 1.4; }
+    .assist-content { padding: 0 16px 15px; }
+    .assist-item { padding: 12px 0; border-top: 1px solid var(--line); }
+    .assist-label { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: .84rem; font-weight: 800; }
+    .assist-label span:last-child { color: var(--muted); font-size: .69rem; font-weight: 600; }
+    .assist-input {
+      width: 100%;
+      min-height: 42px;
+      margin-top: 8px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      color: var(--ink);
+      font-size: .82rem;
+    }
+    .assist-bottom { display: flex; align-items: center; gap: 9px; margin-top: 8px; color: var(--muted); font-size: .73rem; }
+    .assist-bottom input[type="number"] { width: 77px; min-height: 38px; padding: 6px; border: 1px solid var(--line); border-radius: 9px; text-align: center; }
+    .assist-bottom .done-label { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
+    .assist-bottom .done-label input { width: 17px; height: 17px; }
+    .settings { overflow: hidden; }
+    .settings summary { display: flex; justify-content: space-between; align-items: center; padding: 16px; cursor: pointer; list-style: none; }
+    .settings summary::-webkit-details-marker { display: none; }
+    .settings summary::after { content: "+"; color: var(--green); font-size: 1.25rem; }
+    .settings[open] summary::after { content: "−"; }
+    .settings-content { padding: 0 16px 16px; }
+    .settings-note { margin: 0 0 12px; color: var(--muted); font-size: .75rem; line-height: 1.45; }
+    .max-row {
+      display: grid;
+      grid-template-columns: minmax(74px, 1.15fr) repeat(3, minmax(62px, 1fr));
+      align-items: center;
+      gap: 7px;
+      padding: 9px 0;
+      border-top: 1px solid var(--line);
+    }
+    .max-row strong { font-size: .8rem; }
+    .max-row label { display: block; color: var(--muted); font-size: .62rem; }
+    .max-row input {
+      width: 100%;
+      min-height: 39px;
+      margin-top: 4px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+      color: var(--ink);
+      text-align: center;
+      font-size: .78rem;
+    }
+    .settings-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+    .secondary-button, .primary-button {
+      min-height: 43px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: white;
+      color: var(--ink);
+      font-size: .77rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .primary-button { grid-column: 1 / -1; border-color: var(--green); background: var(--green); color: white; }
+    .secondary-button:active, .primary-button:active, .tab:active, .set-dot:active { transform: scale(.98); }
+    .install-tip { margin: 19px 2px 0; color: var(--muted); font-size: .72rem; line-height: 1.5; text-align: center; }
+    .notice {
+      display: none;
+      margin: 12px 0;
+      padding: 12px;
+      border: 1px solid #e8b99e;
+      border-radius: 12px;
+      background: #fff3ec;
+      color: #703b22;
+      font-size: .8rem;
+      line-height: 1.4;
+    }
+    .notice.show { display: block; }
+    .notice button { margin-left: 7px; padding: 4px 7px; border: 0; border-radius: 6px; background: #f5d9c9; color: #703b22; font-size: .75rem; font-weight: 750; }
+    .toast {
+      position: fixed;
+      z-index: 5;
+      right: 16px;
+      bottom: max(16px, env(safe-area-inset-bottom));
+      left: 16px;
+      width: fit-content;
+      max-width: calc(100% - 32px);
+      margin: 0 auto;
+      padding: 11px 15px;
+      transform: translateY(20px);
+      border-radius: 12px;
+      background: var(--ink);
+      color: white;
+      font-size: .8rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .hidden { display: none !important; }
+    @media (min-width: 620px) {
+      .shell { padding-top: 32px; }
+      .hero { padding: 25px; }
+      .lift-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 12px; }
+      .lift-card { margin-top: 0; }
+      .assistance, .settings { margin-top: 16px; }
+    }
+    @media (max-width: 380px) {
+      .shell { width: min(100% - 22px, 760px); }
+      .lift-card { padding: 13px; }
+      .set-dots { gap: 3px; }
+      .set-dot { width: 25px; }
+      .day-tabs { gap: 5px; }
+      .day-tabs .tab { padding-left: 8px; }
+      .max-row { grid-template-columns: minmax(58px, 1fr) repeat(3, minmax(42px, .75fr)); gap: 4px; }
+      .max-row input { padding: 4px 2px; font-size: .73rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">5/3/1</span><span>STRENGTH NOTES</span></div>
+      <div class="saved-state"><span class="saved-dot"></span><span id="save-label">Lagret på enheten</span></div>
+    </div>
+    <h1>Treningsloggen</h1>
+    <p class="subtitle">En tydelig økt om gangen. Kryss av mens du trener.</p>
+
+    <div id="storage-notice" class="notice" role="alert">
+      <span id="notice-text"></span>
+      <button id="fresh-start" type="button" class="hidden">Start på nytt</button>
+    </div>
+
+    <section class="hero" aria-live="polite">
+      <div class="hero-row">
+        <div>
+          <div class="hero-label">På planen</div>
+          <h2 id="hero-title">Uke 1 · Økt 1</h2>
+          <p id="hero-meta" class="hero-meta"></p>
+        </div>
+        <div id="progress-copy" class="progress-copy">0 av 22 sett</div>
+      </div>
+      <div class="progress-track" role="progressbar" aria-label="Fullførte sett" aria-valuemin="0" aria-valuemax="22" aria-valuenow="0">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+    </section>
+
+    <div class="section-label">Velg treningsuke</div>
+    <nav id="week-tabs" class="week-tabs" aria-label="Treningsuke"></nav>
+    <div class="section-label">Velg økt</div>
+    <nav id="day-tabs" class="day-tabs" aria-label="Økt i uken"></nav>
+
+    <div id="lift-grid" class="lift-grid"></div>
+
+    <section class="assistance">
+      <div class="assist-head">
+        <h2>Assistanse</h2>
+        <p>Velg 1–2 øvelser fra hver kategori. Sikt på totalt 50–100 repetisjoner per kategori, slik arket beskriver.</p>
+      </div>
+      <div id="assistance-fields" class="assist-content"></div>
+    </section>
+
+    <details class="settings">
+      <summary>Treningsmaks og innstillinger</summary>
+      <div class="settings-content">
+        <p class="settings-note">Arbeidsvektene regnes fra treningsmaks og rundes til nærmeste 2,5 kg. Fyll inn dine egne verdier her; standardoppsettet inneholder ingen personlige løftemaks. Juster TM direkte, eller bruk 1RM til å beregne 90 %.</p>
+        <div class="max-row max-heading" aria-hidden="true">
+          <strong></strong><label>1RM · kg</label><label>TM · kg</label><label>Økning · kg</label>
+        </div>
+        <div id="max-fields"></div>
+        <div class="settings-actions">
+          <button id="recalculate-tm" type="button" class="secondary-button">Beregn TM fra 1RM</button>
+          <button id="export-data" type="button" class="secondary-button">Last ned sikkerhetskopi</button>
+          <button id="import-button" type="button" class="secondary-button">Importer sikkerhetskopi</button>
+          <input id="import-file" class="hidden" type="file" accept="application/json,.json">
+          <button id="new-cycle" type="button" class="primary-button">Start neste 3-ukerssyklus</button>
+        </div>
+      </div>
+    </details>
+
+    <p class="install-tip">Tips: I Safari kan du velge <strong>Del → Legg til på Hjem-skjerm</strong> for å bruke den som en app. Data lagres i denne nettleseren på denne enheten. Bruk sikkerhetskopi hvis du bytter telefon eller nettleser.</p>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    "use strict";
+
+    const STORAGE_KEY = "531-treningslogg-v1";
+    const LIFTS = {
+      squat: { name: "Knebøy", oneRM: 0, tm: 0, increment: 5 },
+      bench: { name: "Benkpress", oneRM: 0, tm: 0, increment: 2.5 },
+      deadlift: { name: "Markløft", oneRM: 0, tm: 0, increment: 5 },
+      press: { name: "Skulderpress", oneRM: 0, tm: 0, increment: 2.5 }
+    };
+    const DAYS = [
+      { lifts: ["squat", "bench"] },
+      { lifts: ["deadlift", "press"] },
+      { lifts: ["bench", "squat"] }
+    ];
+    const ASSISTANCE = [
+      { key: "push", name: "Press", hint: "Dips, push-ups, hantelpress, triceps" },
+      { key: "pull", name: "Trekk", hint: "Chins, roing, face pulls, curls" },
+      { key: "legs", name: "Ettbeins / kjerne", hint: "Mage, utfall, step-ups, swings" }
+    ];
+    const WEEK_PLAN = {
+      1: { percentages: [40, 50, 60, 65, 75, 85], reps: [5, 5, 3, 5, 5, "5+"], supplemental: 65 },
+      2: { percentages: [40, 50, 60, 70, 80, 90], reps: [5, 5, 3, 3, 3, "3+"], supplemental: 70 },
+      3: { percentages: [40, 50, 60, 75, 85, 95], reps: [5, 5, 3, 5, 3, "1+"], supplemental: 75 }
+    };
+
+    function defaultState() {
+      const maxes = {};
+      for (const [key, lift] of Object.entries(LIFTS)) {
+        maxes[key] = { oneRM: lift.oneRM, tm: lift.tm, increment: lift.increment };
+      }
+      return { version: 1, week: 1, day: 0, maxes, logs: {} };
+    }
+
+    function hydrateState(saved) {
+      if (!saved || saved.version !== 1 || typeof saved !== "object") throw new Error("Sikkerhetskopien har et format denne appen ikke kjenner igjen.");
+      const next = defaultState();
+      next.week = Number.isInteger(saved.week) && saved.week >= 1 && saved.week <= 3 ? saved.week : 1;
+      next.day = Number.isInteger(saved.day) && saved.day >= 0 && saved.day <= 2 ? saved.day : 0;
+      if (saved.maxes && typeof saved.maxes === "object") {
+        for (const key of Object.keys(LIFTS)) {
+          const value = saved.maxes[key];
+          if (!value || typeof value !== "object") continue;
+          for (const field of ["oneRM", "tm", "increment"]) {
+            const number = Number(value[field]);
+            if (Number.isFinite(number) && number >= 0 && number <= 1000) next.maxes[key][field] = number;
+          }
+        }
+      }
+      if (saved.logs && typeof saved.logs === "object" && !Array.isArray(saved.logs)) next.logs = saved.logs;
+      return next;
+    }
+
+    let canSave = true;
+    let storageError = "";
+    let state = defaultState();
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) state = hydrateState(JSON.parse(stored));
+    } catch (error) {
+      canSave = false;
+      storageError = error instanceof Error ? error.message : "Ukjent lagringsfeil.";
+    }
+
+    const $ = (selector) => document.querySelector(selector);
+    const safeText = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[char]);
+    const numberFormat = new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 1 });
+    const fmt = (value) => numberFormat.format(value);
+    const roundToPlate = (value) => Math.round(value / 2.5) * 2.5;
+    const logKey = () => `${state.week}-${state.day}`;
+
+    function getLog() {
+      const key = logKey();
+      if (!state.logs[key] || typeof state.logs[key] !== "object") {
+        state.logs[key] = { sets: {}, amrap: {}, assistance: {} };
+      }
+      const log = state.logs[key];
+      if (!log.sets || typeof log.sets !== "object") log.sets = {};
+      if (!log.amrap || typeof log.amrap !== "object") log.amrap = {};
+      if (!log.assistance || typeof log.assistance !== "object") log.assistance = {};
+      return log;
+    }
+
+    function save() {
+      if (!canSave) return false;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        $("#save-label").textContent = "Lagret på enheten";
+        return true;
+      } catch (error) {
+        canSave = false;
+        storageError = error instanceof Error ? error.message : "Ukjent lagringsfeil.";
+        showStorageNotice();
+        return false;
+      }
+    }
+
+    function showStorageNotice() {
+      const notice = $("#storage-notice");
+      $("#notice-text").textContent = `Automatisk lagring er ikke tilgjengelig: ${storageError} Endringer blir ikke lagret.`;
+      $("#fresh-start").classList.toggle("hidden", !storageError.includes("format"));
+      notice.classList.add("show");
+      $("#save-label").textContent = "Ikke lagret";
+      $(".saved-dot").style.background = "#e88455";
+    }
+
+    function showToast(message) {
+      const toast = $("#toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timeout);
+      showToast.timeout = window.setTimeout(() => toast.classList.remove("show"), 2300);
+    }
+
+    function getWorkoutSets(liftKey, week) {
+      const plan = WEEK_PLAN[week];
+      const reps = [...plan.reps];
+      if (week === 3 && (liftKey === "bench" || liftKey === "deadlift")) reps[2] = 5;
+      return plan.percentages.map((percentage, index) => ({
+        percentage,
+        reps: reps[index],
+        id: `main-${index}`
+      }));
+    }
+
+    function setWeight(liftKey, percentage) {
+      return roundToPlate(state.maxes[liftKey].tm * percentage / 100);
+    }
+
+    function renderTabs() {
+      $("#week-tabs").innerHTML = [1, 2, 3].map((week) =>
+        `<button class="tab" type="button" data-week="${week}" aria-pressed="${week === state.week}">Uke ${week}</button>`
+      ).join("");
+      $("#day-tabs").innerHTML = DAYS.map((day, index) => {
+        const names = day.lifts.map((key) => LIFTS[key].name).join(" + ");
+        return `<button class="tab" type="button" data-day="${index}" aria-pressed="${index === state.day}"><span class="day-name">Økt ${index + 1}</span><span class="day-lifts">${safeText(names)}</span></button>`;
+      }).join("");
+    }
+
+    function renderLift(liftKey) {
+      const lift = LIFTS[liftKey];
+      const week = WEEK_PLAN[state.week];
+      const log = getLog();
+      if (!Array.isArray(log.sets[liftKey])) log.sets[liftKey] = [];
+      const checked = log.sets[liftKey];
+      const rows = getWorkoutSets(liftKey, state.week);
+      const mainRows = rows.map((set, index) => {
+        const done = Boolean(checked[index]);
+        const isPlus = String(set.reps).includes("+");
+        return `<div class="set-row ${done ? "is-done" : ""} ${isPlus ? "plus-row" : ""}">
+          <label class="set-label"><span class="check-wrap"><input type="checkbox" data-lift="${liftKey}" data-set="${set.id}" ${done ? "checked" : ""} aria-label="Sett ${index + 1} ${safeText(lift.name)} fullført"></span><span>${index < 3 ? "Oppvarming" : index === 5 ? "Topp-sett" : "Arbeidssett"} · ${set.percentage} %</span></label>
+          <span class="set-weight">${fmt(setWeight(liftKey, set.percentage))} kg</span><span class="set-reps">${safeText(set.reps)} reps</span>
+        </div>${isPlus ? `<div class="amrap-entry"><label for="amrap-${liftKey}">Ekstra reps på topp-settet</label><input id="amrap-${liftKey}" class="small-input" type="number" min="0" max="100" step="1" inputmode="numeric" data-amrap="${liftKey}" value="${safeText(log.amrap[liftKey] ?? "")}" placeholder="–"></div>` : ""}`;
+      }).join("");
+      const extraWeight = setWeight(liftKey, week.supplemental);
+      const extraChecked = Array.from({ length: 5 }, (_, i) => Boolean(checked[6 + i]));
+      return `<article class="lift-card">
+        <div class="lift-heading">
+          <div><h2 class="lift-title">${safeText(lift.name)}</h2><p class="lift-subtitle">${state.week === 1 ? "5-repsuke" : state.week === 2 ? "3-repsuke" : "1-repsuke"} · ${state.week}. uke</p></div>
+          <span class="tm-chip">TM ${fmt(state.maxes[liftKey].tm)} kg</span>
+        </div>
+        <div class="set-heading"><span>Sett · belastning</span><span>Vekt</span><span>Reps</span></div>
+        ${mainRows}
+        <div class="five-by-five">
+          <div class="five-by-five-info"><span class="five-by-five-title">Ekstra arbeid · 5 × 5</span><span class="five-by-five-weight">${week.supplemental} % · ${fmt(extraWeight)} kg</span></div>
+          <div class="set-dots" role="group" aria-label="${safeText(lift.name)} ekstra arbeid, fem sett">
+            ${extraChecked.map((done, i) => `<button class="set-dot" type="button" data-lift="${liftKey}" data-set="extra-${i}" aria-pressed="${done}" aria-label="Sett ${i + 1} av 5 ${done ? "fullført" : "ikke fullført"}">${i + 1}</button>`).join("")}
+          </div>
+        </div>
+      </article>`;
+    }
+
+    function renderAssistance() {
+      const log = getLog();
+      $("#assistance-fields").innerHTML = ASSISTANCE.map((item) => {
+        const entry = log.assistance[item.key] || {};
+        return `<div class="assist-item">
+          <div class="assist-label"><span>${safeText(item.name)}</span><span>${safeText(item.hint)}</span></div>
+          <input class="assist-input" type="text" maxlength="160" data-assist="${item.key}" data-assist-field="exercises" value="${safeText(entry.exercises || "")}" placeholder="Øvelser, f.eks. nedtrekk + curls">
+          <div class="assist-bottom">
+            <label for="reps-${item.key}">Totalt reps</label>
+            <input id="reps-${item.key}" type="number" min="0" max="999" step="1" inputmode="numeric" data-assist="${item.key}" data-assist-field="reps" value="${safeText(entry.reps ?? "")}" placeholder="50–100">
+            <label class="done-label"><input type="checkbox" data-assist="${item.key}" data-assist-field="done" ${entry.done ? "checked" : ""}> Ferdig</label>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderMaxes() {
+      $("#max-fields").innerHTML = Object.entries(LIFTS).map(([key, lift]) => {
+        const values = state.maxes[key];
+        return `<div class="max-row">
+          <strong>${safeText(lift.name)}</strong>
+          <label><span class="hidden">1RM for ${safeText(lift.name)}</span><input type="number" min="0" max="1000" step="0.5" inputmode="decimal" data-max="${key}" data-field="oneRM" value="${safeText(values.oneRM)}" aria-label="${safeText(lift.name)} 1RM i kilo"></label>
+          <label><span class="hidden">TM for ${safeText(lift.name)}</span><input type="number" min="0" max="1000" step="0.5" inputmode="decimal" data-max="${key}" data-field="tm" value="${safeText(values.tm)}" aria-label="${safeText(lift.name)} treningsmaks i kilo"></label>
+          <label><span class="hidden">Økning for ${safeText(lift.name)}</span><input type="number" min="0" max="25" step="0.5" inputmode="decimal" data-max="${key}" data-field="increment" value="${safeText(values.increment)}" aria-label="${safeText(lift.name)} økning per syklus i kilo"></label>
+        </div>`;
+      }).join("");
+    }
+
+    function renderProgress() {
+      const day = DAYS[state.day];
+      const log = getLog();
+      let total = 0;
+      let done = 0;
+      for (const liftKey of day.lifts) {
+        total += 11;
+        const sets = Array.isArray(log.sets[liftKey]) ? log.sets[liftKey] : [];
+        done += Array.from({ length: 11 }, (_, i) => sets[i]).filter(Boolean).length;
+      }
+      const percent = total ? Math.round(done / total * 100) : 0;
+      $("#hero-title").textContent = `Uke ${state.week} · Økt ${state.day + 1}`;
+      $("#hero-meta").textContent = `${day.lifts.map((key) => LIFTS[key].name).join(" + ")} · 3-ukerssyklus`;
+      $("#progress-copy").textContent = `${done} av ${total} sett`;
+      $("#progress-fill").style.width = `${percent}%`;
+      $(".progress-track").setAttribute("aria-valuemax", String(total));
+      $(".progress-track").setAttribute("aria-valuenow", String(done));
+    }
+
+    function render() {
+      renderTabs();
+      $("#lift-grid").innerHTML = DAYS[state.day].lifts.map(renderLift).join("");
+      renderAssistance();
+      renderMaxes();
+      renderProgress();
+    }
+
+    function updateSet(liftKey, setId, isDone) {
+      const log = getLog();
+      if (!Array.isArray(log.sets[liftKey])) log.sets[liftKey] = [];
+      const index = setId.startsWith("extra-") ? 6 + Number(setId.slice(6)) : Number(setId.slice(5));
+      if (!Number.isInteger(index) || index < 0 || index > 10) return;
+      log.sets[liftKey][index] = isDone;
+      save();
+      render();
+    }
+
+    function handleInput(event) {
+      const target = event.target;
+      if (target.matches("[data-assist]")) {
+        const log = getLog();
+        const category = target.dataset.assist;
+        if (!log.assistance[category]) log.assistance[category] = {};
+        const field = target.dataset.assistField;
+        log.assistance[category][field] = field === "done" ? target.checked : target.value;
+        save();
+        return;
+      }
+      if (target.matches("[data-amrap]")) {
+        getLog().amrap[target.dataset.amrap] = target.value;
+        save();
+        return;
+      }
+      if (target.matches("[data-max]")) {
+        const number = Number(target.value);
+        if (target.value !== "" && Number.isFinite(number) && target.validity.valid) {
+          state.maxes[target.dataset.max][target.dataset.field] = number;
+        }
+        save();
+      }
+    }
+
+    function startNextCycle() {
+      if (!window.confirm("Starte neste 3-ukerssyklus? Treningsmaks økes med verdiene du har angitt, og avkryssingene fra denne syklusen nullstilles.")) return;
+      for (const key of Object.keys(LIFTS)) {
+        const values = state.maxes[key];
+        values.tm = roundToPlate(values.tm + values.increment);
+      }
+      state.week = 1;
+      state.day = 0;
+      state.logs = {};
+      save();
+      render();
+      showToast("Ny syklus startet. Treningsmaks er oppdatert.");
+    }
+
+    function exportBackup() {
+      const payload = { app: "531-treningslogg", version: 1, exportedAt: new Date().toISOString(), state };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `531-treningslogg-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("Sikkerhetskopien er lastet ned.");
+    }
+
+    function importBackup(file) {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        try {
+          const payload = JSON.parse(String(reader.result));
+          if (!payload || payload.app !== "531-treningslogg") throw new Error("Dette ser ikke ut som en sikkerhetskopi fra 531 Treningslogg.");
+          state = hydrateState(payload.state);
+          canSave = true;
+          storageError = "";
+          if (!save()) throw new Error("Importen kunne ikke lagres i nettleseren.");
+          $("#storage-notice").classList.remove("show");
+          $(".saved-dot").style.background = "";
+          render();
+          showToast("Sikkerhetskopi importert.");
+        } catch (error) {
+          showToast(error instanceof Error ? error.message : "Kunne ikke importere sikkerhetskopien.");
+        }
+      });
+      reader.addEventListener("error", () => showToast("Filen kunne ikke leses."));
+      reader.readAsText(file);
+    }
+
+    $("#week-tabs").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-week]");
+      if (!button) return;
+      state.week = Number(button.dataset.week);
+      save();
+      render();
+    });
+    $("#day-tabs").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-day]");
+      if (!button) return;
+      state.day = Number(button.dataset.day);
+      save();
+      render();
+    });
+    $("#lift-grid").addEventListener("change", (event) => {
+      if (event.target.matches("[data-lift][data-set]") && event.target.type === "checkbox") {
+        updateSet(event.target.dataset.lift, event.target.dataset.set, event.target.checked);
+      }
+    });
+    $("#lift-grid").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-lift][data-set]");
+      if (!button) return;
+      updateSet(button.dataset.lift, button.dataset.set, button.getAttribute("aria-pressed") !== "true");
+    });
+    document.addEventListener("input", handleInput);
+    document.addEventListener("change", (event) => {
+      handleInput(event);
+      if (event.target.matches("[data-max]")) render();
+    });
+    $("#recalculate-tm").addEventListener("click", () => {
+      for (const key of Object.keys(LIFTS)) state.maxes[key].tm = roundToPlate(state.maxes[key].oneRM * 0.9);
+      save();
+      render();
+      showToast("Treningsmaks beregnet som 90 % av 1RM.");
+    });
+    $("#new-cycle").addEventListener("click", startNextCycle);
+    $("#export-data").addEventListener("click", exportBackup);
+    $("#import-button").addEventListener("click", () => $("#import-file").click());
+    $("#import-file").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) importBackup(file);
+      event.target.value = "";
+    });
+    $("#fresh-start").addEventListener("click", () => {
+      if (!window.confirm("Slette den ødelagte lagrede tilstanden og starte med standardverdiene fra Excel-arket?")) return;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        state = defaultState();
+        canSave = true;
+        storageError = "";
+        $("#storage-notice").classList.remove("show");
+        $(".saved-dot").style.background = "";
+        save();
+        render();
+      } catch (error) {
+        storageError = error instanceof Error ? error.message : "Ukjent lagringsfeil.";
+        showStorageNotice();
+      }
+    });
+
+    render();
+    if (storageError) showStorageNotice();
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+        showToast(`Offline-støtte kunne ikke aktiveres: ${error.message}`);
+      });
+    }
+  </script>
+</body>
+</html>
