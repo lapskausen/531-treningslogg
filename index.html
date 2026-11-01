@@ -299,6 +299,34 @@
       text-align: center;
       font-size: .78rem;
     }
+    .estimator {
+      margin-top: 15px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #f7f8f2;
+    }
+    .estimator h3 { margin: 0; font-size: .9rem; }
+    .estimator-note { margin: 5px 0 11px; color: var(--muted); font-size: .72rem; line-height: 1.45; }
+    .estimator-fields { display: grid; grid-template-columns: 1.2fr 1fr .8fr; gap: 8px; }
+    .estimator-fields label { min-width: 0; color: var(--muted); font-size: .67rem; }
+    .estimator-fields input, .estimator-fields select {
+      width: 100%;
+      min-height: 40px;
+      margin-top: 4px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: white;
+      color: var(--ink);
+      font-size: .8rem;
+    }
+    .estimator-result { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 11px; }
+    .estimator-value { font-size: .78rem; font-weight: 750; }
+    .estimator-value strong { margin-left: 4px; color: var(--green-dark); font-size: 1.08rem; }
+    .estimator-result .secondary-button { min-height: 39px; padding: 7px 9px; font-size: .7rem; }
+    .estimator-result .secondary-button:disabled { opacity: .48; cursor: not-allowed; }
+    .estimator-status { min-height: 1em; margin: 7px 0 0; color: var(--muted); font-size: .7rem; }
     .settings-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
     .secondary-button, .primary-button {
       min-height: 43px;
@@ -364,6 +392,10 @@
       .day-tabs .tab { padding-left: 8px; }
       .max-row { grid-template-columns: minmax(58px, 1fr) repeat(3, minmax(42px, .75fr)); gap: 4px; }
       .max-row input { padding: 4px 2px; font-size: .73rem; }
+      .estimator { padding: 11px; }
+      .estimator-fields { grid-template-columns: 1.1fr 1fr .7fr; gap: 5px; }
+      .estimator-fields input, .estimator-fields select { padding: 5px 3px; font-size: .74rem; }
+      .estimator-result { align-items: flex-start; flex-direction: column; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -421,6 +453,26 @@
           <strong></strong><label>1RM · kg</label><label>TM · kg</label><label>Økning · kg</label>
         </div>
         <div id="max-fields"></div>
+        <section class="estimator" aria-labelledby="estimator-title">
+          <h3 id="estimator-title">Estimer 1RM</h3>
+          <p class="estimator-note">Samme formel som PR-arket: vekt × (1 + reps × 0,0333). Estimatet er mest nyttig for et tungt sett på opptil 15 reps.</p>
+          <div class="estimator-fields">
+            <label for="estimate-lift">Løft
+              <select id="estimate-lift" data-estimator="lift"></select>
+            </label>
+            <label for="estimate-weight">Vekt · kg
+              <input id="estimate-weight" type="number" min="0.1" max="1000" step="0.1" inputmode="decimal" data-estimator="weight" placeholder="F.eks. 60">
+            </label>
+            <label for="estimate-reps">Reps
+              <input id="estimate-reps" type="number" min="1" max="15" step="1" inputmode="numeric" data-estimator="reps" placeholder="1–15">
+            </label>
+          </div>
+          <div class="estimator-result" aria-live="polite">
+            <span class="estimator-value">Estimert 1RM<strong id="estimate-result">–</strong></span>
+            <button id="apply-estimate" type="button" class="secondary-button" disabled>Bruk estimatet og beregn TM</button>
+          </div>
+          <p id="estimate-status" class="estimator-status">Fyll inn vekt og reps for å beregne estimatet.</p>
+        </section>
         <div class="settings-actions">
           <button id="recalculate-tm" type="button" class="secondary-button">Beregn TM fra 1RM</button>
           <button id="export-data" type="button" class="secondary-button">Last ned sikkerhetskopi</button>
@@ -466,7 +518,14 @@
       for (const [key, lift] of Object.entries(LIFTS)) {
         maxes[key] = { oneRM: lift.oneRM, tm: lift.tm, increment: lift.increment };
       }
-      return { version: 1, week: 1, day: 0, maxes, logs: {} };
+      return {
+        version: 1,
+        week: 1,
+        day: 0,
+        maxes,
+        logs: {},
+        estimator: { lift: "squat", weight: "", reps: "" }
+      };
     }
 
     function hydrateState(saved) {
@@ -485,6 +544,15 @@
         }
       }
       if (saved.logs && typeof saved.logs === "object" && !Array.isArray(saved.logs)) next.logs = saved.logs;
+      if (saved.estimator && typeof saved.estimator === "object") {
+        if (Object.hasOwn(LIFTS, saved.estimator.lift)) next.estimator.lift = saved.estimator.lift;
+        for (const field of ["weight", "reps"]) {
+          const value = saved.estimator[field];
+          if (value === "" || (Number.isFinite(Number(value)) && Number(value) >= 0)) {
+            next.estimator[field] = String(value);
+          }
+        }
+      }
       return next;
     }
 
@@ -637,6 +705,32 @@
       }).join("");
     }
 
+    function calculateEstimate() {
+      const weight = Number(state.estimator.weight);
+      const reps = Number(state.estimator.reps);
+      if (!Number.isFinite(weight) || weight <= 0 || weight > 1000) return null;
+      if (!Number.isInteger(reps) || reps < 1 || reps > 15) return null;
+      return Math.round((weight * (1 + reps * 0.0333)) * 10) / 10;
+    }
+
+    function renderEstimator() {
+      $("#estimate-lift").innerHTML = Object.entries(LIFTS).map(([key, lift]) =>
+        `<option value="${key}" ${state.estimator.lift === key ? "selected" : ""}>${safeText(lift.name)}</option>`
+      ).join("");
+      $("#estimate-weight").value = state.estimator.weight;
+      $("#estimate-reps").value = state.estimator.reps;
+      renderEstimateResult();
+    }
+
+    function renderEstimateResult() {
+      const estimate = calculateEstimate();
+      $("#estimate-result").textContent = estimate === null ? "–" : `${fmt(estimate)} kg`;
+      $("#apply-estimate").disabled = estimate === null;
+      $("#estimate-status").textContent = estimate === null
+        ? "Fyll inn vekt og reps (1–15) for å beregne estimatet."
+        : `Estimat for ${LIFTS[state.estimator.lift].name}. TM beregnes som 90 % av estimert 1RM, avrundet til 2,5 kg.`;
+    }
+
     function renderProgress() {
       const day = DAYS[state.day];
       const log = getLog();
@@ -661,6 +755,7 @@
       $("#lift-grid").innerHTML = DAYS[state.day].lifts.map(renderLift).join("");
       renderAssistance();
       renderMaxes();
+      renderEstimator();
       renderProgress();
     }
 
@@ -696,6 +791,12 @@
           state.maxes[target.dataset.max][target.dataset.field] = number;
         }
         save();
+        return;
+      }
+      if (target.matches("[data-estimator]")) {
+        state.estimator[target.dataset.estimator] = target.value;
+        save();
+        renderEstimateResult();
       }
     }
 
@@ -781,6 +882,19 @@
       save();
       render();
       showToast("Treningsmaks beregnet som 90 % av 1RM.");
+    });
+    $("#apply-estimate").addEventListener("click", () => {
+      const estimate = calculateEstimate();
+      if (estimate === null) {
+        showToast("Fyll inn en gyldig vekt og 1–15 repetisjoner først.");
+        return;
+      }
+      const liftKey = state.estimator.lift;
+      state.maxes[liftKey].oneRM = estimate;
+      state.maxes[liftKey].tm = roundToPlate(estimate * 0.9);
+      save();
+      render();
+      showToast(`${LIFTS[liftKey].name}: 1RM ${fmt(estimate)} kg · TM ${fmt(state.maxes[liftKey].tm)} kg.`);
     });
     $("#new-cycle").addEventListener("click", startNextCycle);
     $("#export-data").addEventListener("click", exportBackup);
